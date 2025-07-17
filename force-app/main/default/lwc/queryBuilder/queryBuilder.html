@@ -1,0 +1,136 @@
+<template>
+  <div class="app-container">
+    <div class="builder-wrapper">
+      <div class={layoutWrapperClass}>
+        <!-- TOP PANEL -->
+        <div class="top-panel-container">
+          <!-- MAIN OBJECT CARD-->
+          <div class="card-row">
+            <div class="section-card">
+              <h2>Main Object Selector</h2>
+              <div class="selector-group">
+                <div class="main-object-loader">
+                  <lightning-combobox
+                    label="Select Object"
+                    options={mainObjectOptions}
+                    onchange={handleMainObjectChange}
+                    disabled={isMainObjectLoading}
+                  ></lightning-combobox>
+
+                  <template if:true={isMainObjectLoading}>
+                    <lightning-spinner
+                      alternative-text="Loading object metadata..."
+                      size="medium"
+                    ></lightning-spinner>
+                  </template>
+                </div>
+                <template if:true={mainObjectSelected}>
+                  <lightning-dual-listbox
+                    label="Select Fields"
+                    source-label="Available"
+                    selected-label="Selected"
+                    options={mainFieldOptions}
+                    value={selectedMainFields}
+                    onchange={handleMainFieldChange}
+                  >
+                  </lightning-dual-listbox>
+                </template>
+              </div>
+            </div>
+            <template if:true={mainObjectSelected}>
+              <!-- PARENT OBJECT CARD -->
+              <div class="section-card">
+                <h2>Parent Object Selector</h2>
+                <lightning-combobox
+                  label="Select Object"
+                  options={parentObjectOptions}
+                  onchange={handleParentObjectOptionChange}
+                  value={selectedParentReferenceField}
+                >
+                </lightning-combobox>
+                <lightning-button
+                  label="Add Reference Tab"
+                  onclick={handleAddParentTab}
+                  icon-name="utility:add"
+                  variant="brand"
+                ></lightning-button>
+                <lightning-tabset>
+                  <template for:each={parentReferenceTabs} for:item="tab">
+                    <lightning-tab key={tab.key} label={tab.label}>
+                      <lightning-dual-listbox
+                        source-label="Available Fields"
+                        selected-label="Selected Fields"
+                        options={tab.options}
+                        value={tab.selected}
+                        data-rel-key={tab.key}
+                        onchange={handleParentFieldsChange}
+                      ></lightning-dual-listbox>
+                    </lightning-tab>
+                  </template>
+                </lightning-tabset>
+              </div>
+              <!-- CHILD OBJECT CARD-->
+              <div class="section-card">
+                <h2>Child Object Selector</h2>
+                <lightning-combobox
+                  label="Select Object"
+                  options={mainObjectOptions}
+                  onchange={handleMainObjectChange}
+                >
+                </lightning-combobox>
+                <lightning-tabset>
+                  <template for:each={childReferenceTabs} for:item="tab">
+                    <lightning-tab key={tab.key} label={tab.label}>
+                      <lightning-dual-listbox
+                        source-label="Available Fields"
+                        selected-label="Selected Fields"
+                        options={tab.options}
+                        value={tab.selected}
+                        data-rel-key={tab.key}
+                        onchange={handleChildFieldsChange}
+                      ></lightning-dual-listbox>
+                    </lightning-tab>
+                  </template>
+                </lightning-tabset>
+              </div>
+              <!-- WHERE CLAUSE CARD -->
+              <div class="section-card">
+                <h2>Where Clause Selector</h2>
+                <lightning-combobox
+                  label="Select Object"
+                  options={mainObjectOptions}
+                  onchange={handleMainObjectChange}
+                >
+                </lightning-combobox>
+              </div>
+            </template>
+          </div>
+
+          <!-- BOTTOM PANEL -->
+          <div class="bottom-panel-container">
+            <p>test test right panel test test</p>
+          </div>
+        </div>
+      </div>
+      <div class="soql-preview-container">
+        <div class="utility-buttons">
+          <lightning-button
+            label="Toggle Debug Borders"
+            onclick={toggleMode}
+            data-target="debugMode"
+          >
+          </lightning-button>
+          <lightning-button
+            label="expand results"
+            onclick={toggleMode}
+            data-target="layoutClass"
+          ></lightning-button>
+        </div>
+        <div class="soql-preview-header">
+          <p>SOQL PREVIEW</p>
+        </div>
+        <div class="soql-preview-window">{previewText}</div>
+      </div>
+    </div>
+  </div>
+</template>

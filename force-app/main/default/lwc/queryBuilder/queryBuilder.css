@@ -1,0 +1,149 @@
+.debug-on * {
+    border: 0.5px dashed red !important;
+}
+
+/*Main Containers*/
+.app-container{
+    height: 100vh;
+    width: 100vw;
+}
+
+.top-panel-container, .bottom-panel-container{
+    position: relative;
+    width: 50%;
+    height: 100%;
+}
+
+.top-panel-container { background-color: #d1d1d1; }
+
+.bottom-panel-container { background-color: #f6f6f9; }
+
+.panel-wrapper:hover 
+.top-panel-container, 
+.panel-wrapper:hover 
+.bottom-panel-container { 
+    box-shadow: inset 0 0 1px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.06);
+ }
+
+
+.panel-wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+
+.panel-collapsed .top-panel-container {
+  width: 100%;
+  background-color: #d1d1d1;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0.5px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+  padding: 1.5rem;
+  margin: 1rem;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease
+}
+
+.panel-collapsed .bottom-panel-container {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+
+
+.panel-expanded .top-panel-container,
+.panel-expanded .bottom-panel-container {
+  width: 50%;
+  transition: width 0.3s ease;
+}
+
+.card-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem; /* spacing between cards */
+  flex-wrap: wrap; /* optional: wraps on smaller screens */
+  justify-content: flex-start;
+}
+
+/* Individual sections */
+
+.section-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1.75rem 1.25rem;
+  margin: 1rem;
+  width: 100%;
+  max-width: 22vw;
+  box-sizing: border-box;
+  border: 1px solid #dfe3e8;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: #c7d1db;
+}
+
+.section-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #2e2e2e;
+}
+
+.section-card .selector-group {
+  display: flex;
+  flex-direction: row; /* ← horizontal layout */
+  flex-wrap: wrap;     /* ← allows wrapping if needed */
+  gap: 1.25rem;         /* ← spacing between cards */
+  justify-content: flex-start; /* ← aligns cards to the left */
+  align-items: stretch;
+}
+
+lightning-dual-listbox {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.main-object-loader{
+  width: 100vw;
+}
+
+lightning-combobox {
+  width: 100%;
+}
+/* SOQL PREVIEW WINDOW*/
+.soql-preview-container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #f4f6f9; /* Light neutral for contrast */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000; /* High enough to float above main content */
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #ddd;
+}
+
+.soql-preview-header {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.soql-preview-window {
+  font-family: monospace;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #2e2e2e;
+}
+
+
+
+
