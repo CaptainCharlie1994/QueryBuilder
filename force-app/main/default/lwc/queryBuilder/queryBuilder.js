@@ -7,11 +7,19 @@ import ParentObjectMappingService from "./services/ParentOptionMappingService";
 import MetadataLoaderController from "./controllers/MetadataLoaderController";
 import MainOptionController from "./controllers/MainOptionController";
 import ParentOptionController from "./controllers/ParentOptionController";
+import ChildOptionController from "./controllers/ChildOptionController";
 
 //=============== UTILS =======================
 import ToggleHelper from "./helpers/ToggleHelper";
 import { buildPreview } from "./helpers/QueryPreview";
-import { getParentFieldRefs } from "./utils/getters";
+import {
+  getParentFieldRefs,
+  getChildSubqueries,
+  getWhereClauseFields,
+  getWhereClauseOperators
+} from "./utils/getters";
+import ChildOptionMappingService from "./services/ChildOptionMappingService";
+import TabBuilderService from "./services/TabBuilderService";
 
 export default class QueryBuilder extends LightningElement {
   //=============================//
@@ -48,6 +56,7 @@ export default class QueryBuilder extends LightningElement {
 
   @track parentReferenceTabs = [];
   @track parentObjectOptions = [];
+  @track selectedParentReferenceField = "";
   // Dynamic list of parent reference tab objects
   // Each tab holds: { key, label, options[], selected[] }
 
@@ -56,13 +65,18 @@ export default class QueryBuilder extends LightningElement {
   //================================//
 
   @track childReferenceTabs = []; // Dynamic list of child subquery tab objects
+  @track childObjectOptions = [];
+  @track selectedChildReferenceField = "";
   // Each tab will support: { key, label, options[], selected[] }
   // Subqueries will be rendered separately in the final preview
 
   //===========================//
   // ⚙️ UPCOMING: WHERE CLAUSE //
   //===========================//
-
+  @track filters = [];
+  @track selectedWhereField;
+  @track selectedWhereType;
+  @track currentOperators = [];
   // Planned addition:
   // This will eventually evolve into structured WHERE clause building,
   // including filters for RecordType.DeveloperName and other advanced field logic.
@@ -80,6 +94,12 @@ export default class QueryBuilder extends LightningElement {
       new ParentObjectMappingService(),
       this.metadataLoaderController
     );
+    this.childOptionController = new ChildOptionController(
+      new ChildOptionMappingService(),
+      this.metadataLoaderController
+    );
+
+    this.tabBuilder = new TabBuilderService(this.metadataLoaderController);
   }
 
   connectedCallback() {
@@ -99,6 +119,8 @@ export default class QueryBuilder extends LightningElement {
       .finally(() => {
         this.isMainObjectLoading = false;
       });
+
+    this.addFilter();
   }
 
   //-------------------------- HANDLES --------------------------
@@ -108,13 +130,21 @@ export default class QueryBuilder extends LightningElement {
       const rawFields = await this.metadataLoaderController.loadFields(
         this.selectedMainObject
       );
-
+      console.log("Getting the fields returns -> ", JSON.stringify(rawFields));
       this.mainFieldOptions =
         await this.mainOptionController.buildOptions(rawFields);
+      console.log(
+        "Building the options from the rawFields",
+        JSON.stringify(this.mainFieldOptions)
+      );
 
       const refFields = rawFields.filter((f) => f.isReference === true);
       this.parentObjectOptions =
         await this.parentOptionController.buildOptions(refFields);
+
+      this.childObjectOptions = await this.childOptionController.buildOptions(
+        this.selectedMainObject
+      );
 
       this.mainObjectSelected = this.mainFieldOptions.length > 0;
     } catch (error) {
@@ -125,48 +155,16 @@ export default class QueryBuilder extends LightningElement {
 
   async handleMainFieldChange(event) {
     this.selectedMainFields = event.detail.value;
+    console.log(
+      "this.selectedMainFields: ",
+      JSON.stringify(this.selectedMainFields)
+    );
 
     this.updatePreview();
   }
 
   handleParentObjectOptionChange(event) {
     this.selectedParentReferenceField = event.detail.value;
-  }
-
-  async handleAddParentTab() {
-    const fieldApiName = this.selectedParentReferenceField;
-    if (!fieldApiName) return;
-
-    const mapping = this.parentObjectOptions.find(
-      (opt) => opt.value === fieldApiName
-    );
-    if (!mapping || !mapping.referenceTo) return;
-
-    try {
-      const relationshipName =
-        mapping.relationshipName || mapping.value || mapping.key;
-      const label = mapping.relationshipName
-        ? `${mapping.relationshipName} (${mapping.value})`
-        : mapping.label;
-
-      const tab = await this.parentOptionController.buildReferenceTab(
-        fieldApiName,
-        mapping.referenceTo,
-        label,
-        relationshipName
-      );
-
-      const exists = this.parentReferenceTabs.some(
-        (t) => t.key === fieldApiName
-      );
-      if (!exists) {
-        this.parentReferenceTabs = [...this.parentReferenceTabs, tab];
-      }
-
-      this.selectedParentReferenceField = null;
-    } catch (err) {
-      console.error("Failed to add parent tab:", err?.message || err);
-    }
   }
 
   handleParentFieldsChange(event) {
@@ -180,6 +178,54 @@ export default class QueryBuilder extends LightningElement {
     this.updatePreview();
   }
 
+  handleChildObjectChange(event) {
+    this.selectedChildReferenceField = event.detail.value;
+  }
+
+  async handleReferenceTabClick(event) {
+    const tabType = event.currentTarget.dataset.tabType;
+    await this.addReferenceTab(tabType);
+  }
+
+  // queryBuilder.js
+
+  async addReferenceTab(tabType) {
+    const isParent = tabType === "parent";
+    const selectedKey = isParent
+      ? this.selectedParentReferenceField
+      : this.selectedChildReferenceField;
+
+    const optionsList = isParent
+      ? this.parentObjectOptions
+      : this.childObjectOptions;
+
+    const mapping = optionsList.find((o) => o.value === selectedKey);
+    if (!mapping) return;
+
+    // Build tab using the correct service method
+    const tab = isParent
+      ? await this.tabBuilder.buildParentTab({
+          key: selectedKey,
+          objectApiName: mapping.referenceTo,
+          label: mapping.label,
+          relationshipName: mapping.relationshipName
+        })
+      : await this.tabBuilder.buildChildTab({
+          objectApiName: mapping.value,
+          relationshipName: mapping.relationshipName
+        });
+    console.log("Tab type: ", isParent);
+
+    const listProp = isParent ? "parentReferenceTabs" : "childReferenceTabs";
+    if (!this[listProp].some((t) => t.key === tab.key)) {
+      this[listProp] = [...this[listProp], tab];
+    }
+
+    // reset the combobox
+    if (isParent) this.selectedParentReferenceField = "";
+    else this.selectedChildReferenceField = "";
+  }
+
   handleChildFieldsChange(event) {
     const relKey = event.target.dataset.relKey;
     const updatedValue = event.detail.value;
@@ -189,6 +235,73 @@ export default class QueryBuilder extends LightningElement {
     );
 
     this.updatePreview();
+  }
+
+  addFilter() {
+    // create a new blank filter with no type → empty operators
+    this.filters = [
+      ...this.filters,
+      {
+        id: Date.now(),
+        field: null,
+        type: null,
+        operator: null,
+        value: "",
+        operators: [] // ← new
+      }
+    ];
+  }
+
+  handleFilterFieldChange(event) {
+    const id = event.currentTarget.dataset.id;
+    const fieldApi = event.detail.value;
+    const opt = this.whereClauseFields.find((o) => o.value === fieldApi) || {};
+    const type = opt.type;
+
+    const rawOps = getWhereClauseOperators(type) || [];
+    const formatted = rawOps.map((op) => ({ label: op, value: op }));
+
+    this.filters = this.filters.map((f) =>
+      f.id === +id ? { ...f, field: fieldApi, type, operators: formatted } : f
+    );
+
+    console.log(
+      "handleFiltersChange called. filters -> ",
+      JSON.stringify(this.filters)
+    );
+    this.updatePreview();
+  }
+
+  handleFilterOperatorChange(event) {
+    const id = event.currentTarget.dataset.id;
+    const op = event.detail.value;
+    this.filters = this.filters.map((f) =>
+      f.id === +id ? { ...f, operator: op } : f
+    );
+    this.updatePreview();
+  }
+
+  handleFilterValueChange(event) {
+    const id = event.currentTarget.dataset.id;
+    const val = event.detail.value;
+    this.filters = this.filters.map((f) =>
+      f.id === +id ? { ...f, value: val } : f
+    );
+    this.updatePreview();
+  }
+
+  buildWhereText() {
+    return this.filters
+      .filter((f) => f.field && f.operator && f.value != null)
+      .map((f) => {
+        // wrap strings/dates in quotes
+        const needsQuotes = ["string", "date", "datetime", "picklist"].includes(
+          f.type
+        );
+        const val = needsQuotes ? `'${f.value}'` : f.value;
+        return `${f.field} ${f.operator} ${val}`;
+      })
+      .join(" AND ");
   }
 
   //------------------------------- TOGGLE -> Logic in ToggleHelper.js ----------------------
@@ -218,21 +331,50 @@ export default class QueryBuilder extends LightningElement {
   getParentSelected(key) {
     return this.selectedParentFields?.[key] || [];
   }
+
+  get whereClauseFields() {
+    console.log(
+      "whereClauseFields",
+      JSON.stringify(
+        getWhereClauseFields({
+          allMainOptions: this.mainFieldOptions,
+          selectedMainFields: this.selectedMainFields,
+          parentTabs: this.parentReferenceTabs
+        })
+      )
+    );
+    return getWhereClauseFields({
+      allMainOptions: this.mainFieldOptions,
+      selectedMainFields: this.selectedMainFields,
+      parentTabs: this.parentReferenceTabs
+    });
+  }
+
+  get whereClauseOperators() {
+    return getWhereClauseOperators(this.selectedWhereField.type);
+  }
   //------------------------ SOQL PREVIEW ----------------------------------------------------
+
   updatePreview() {
-    const parentFields = getParentFieldRefs(this.parentReferenceTabs);
-    const allFields = [...this.selectedMainFields, ...parentFields];
+    const parentRefs = getParentFieldRefs(this.parentReferenceTabs);
+    const childSubs = getChildSubqueries(this.childReferenceTabs);
+    const where = this.buildWhereText();
+    const fieldFragments = [
+      ...this.selectedMainFields,
+      ...parentRefs,
+      ...childSubs
+    ];
 
     try {
       this.previewText = buildPreview({
         mainObject: this.selectedMainObject,
-        mainFields: allFields,
-        mainWhere: this.mainWhereClause,
+        fields: fieldFragments,
+        where,
         orderBy: this.orderBy,
-        queryLimit: this.queryLimit
+        limit: this.queryLimit
       });
-    } catch (error) {
-      this.previewText = "-- Query could not be built -- ";
+    } catch (err) {
+      this.previewText = "-- Unable to build query --";
     }
   }
 }

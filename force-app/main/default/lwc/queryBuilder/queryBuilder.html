@@ -50,7 +50,8 @@
                 </lightning-combobox>
                 <lightning-button
                   label="Add Reference Tab"
-                  onclick={handleAddParentTab}
+                  onclick={handleReferenceTabClick}
+                  data-tab-type="parent"
                   icon-name="utility:add"
                   variant="brand"
                 ></lightning-button>
@@ -74,10 +75,17 @@
                 <h2>Child Object Selector</h2>
                 <lightning-combobox
                   label="Select Object"
-                  options={mainObjectOptions}
-                  onchange={handleMainObjectChange}
+                  options={childObjectOptions}
+                  onchange={handleChildObjectChange}
                 >
                 </lightning-combobox>
+                <lightning-button
+                  label="Add Reference Tab"
+                  data-tab-type="child"
+                  onclick={handleReferenceTabClick}
+                  icon-name="utility:add"
+                  variant="brand"
+                ></lightning-button>
                 <lightning-tabset>
                   <template for:each={childReferenceTabs} for:item="tab">
                     <lightning-tab key={tab.key} label={tab.label}>
@@ -96,12 +104,46 @@
               <!-- WHERE CLAUSE CARD -->
               <div class="section-card">
                 <h2>Where Clause Selector</h2>
-                <lightning-combobox
-                  label="Select Object"
-                  options={mainObjectOptions}
-                  onchange={handleMainObjectChange}
-                >
-                </lightning-combobox>
+                <template for:each={filters} for:item="flt">
+                  <div key={flt.id} class="where-clause-filter-row">
+                    <!-- Field picker -->
+                    <lightning-combobox
+                      class="where-clause-field"
+                      data-id={flt.id}
+                      options={whereClauseFields}
+                      value={flt.field}
+                      placeholder="Select field"
+                      onchange={handleFilterFieldChange}
+                    >
+                    </lightning-combobox>
+
+                    <!-- Operator picker -->
+                    <lightning-combobox
+                      class="where-clause-operator"
+                      data-id={flt.id}
+                      options={flt.operators}
+                      value={flt.operator}
+                      placeholder="Select operator"
+                      onchange={handleFilterOperatorChange}
+                    >
+                    </lightning-combobox>
+
+                    <!-- Value input -->
+                    <lightning-input
+                      class="where-clause-value"
+                      data-id={flt.id}
+                      value={flt.value}
+                      placeholder="Enter value"
+                      onchange={handleFilterValueChange}
+                    >
+                    </lightning-input>
+                  </div>
+                </template>
+                <lightning-button
+                  label="Add Filter"
+                  onclick={addFilter}
+                ></lightning-button>
+                <lightning-button label="Remove Filter"></lightning-button>
               </div>
             </template>
           </div>

@@ -1,11 +1,11 @@
-// soqlPreviewBuilder.js
-export function buildPreview(queryParts) {
-  const { mainFields, mainObject, mainWhere, orderBy, queryLimit } = queryParts;
-  let preview = `SELECT ${mainFields.join(', ')} FROM ${mainObject}`;
+// helpers/QueryPreview.js
+export function buildPreview({ mainObject, fields, where, orderBy, limit }) {
+  // Join all fragments (plain fields + subqueries)
+  const fieldList = fields.join(', ');
 
-  if (mainWhere) preview += ` WHERE ${mainWhere}`;
-  if (orderBy) preview += ` ORDER BY ${orderBy}`;
-  if (queryLimit) preview += ` queryLimit ${queryLimit}`;
-
-  return preview;
+  let soql = `SELECT ${fieldList} FROM ${mainObject}`;
+  if (where)   soql += ` WHERE ${where}`;
+  if (orderBy) soql += ` ORDER BY ${orderBy}`;
+  if (limit)   soql += ` LIMIT ${limit}`;
+  return soql;
 }

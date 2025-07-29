@@ -11,4 +11,8 @@ export default class IMetadataService {
   async getFieldsFromObject(){
     throw new Error('IMetadataServices.getFieldsFromObject() not implemented');
   }
+
+  async loadChildRelationshipsForObject(){
+    throw new Error('IMetadataService.loadChildRelationshipsForObject() not implemented');
+  }
 }

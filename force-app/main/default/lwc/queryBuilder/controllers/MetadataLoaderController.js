@@ -18,4 +18,8 @@ export default class MetadataLoaderController {
   async loadFields(objectName){
     return this.meta.getFieldsFromObject(objectName);
   }
+
+  async loadChildRelationships(objectName){
+    return this.meta.loadChildRelationshipsForObject(objectName);
+  }
 }

@@ -112,6 +112,28 @@ lightning-dual-listbox {
 lightning-combobox {
   width: 100%;
 }
+
+.where-clause-filter-row{
+  height: 100px;
+  width: 100%;
+  display: flex;
+}
+.where-clause-filter-item{
+  font-family: 'Courier New', Courier, monospace;
+  margin: 5px;
+}
+
+.where-clause-field{
+  width: 40%;
+}
+
+.where-clause-operator{
+  width: 13%;
+}
+
+.where-clause-value{
+  width: 40%;
+}
 /* SOQL PREVIEW WINDOW*/
 .soql-preview-container {
   position: fixed;

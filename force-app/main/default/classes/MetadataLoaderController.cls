@@ -90,10 +90,7 @@ public with sharing class MetadataLoaderController {
         Schema.DisplayType displayType = fieldDesc.getType();
 
         Map<String, Object> fieldInfo = new Map<String, Object>{
-          'label' => fieldDesc.getLabel() +
-          ' (' +
-          fieldDesc.getName() +
-          ')',
+          'label' => fieldDesc.getLabel(),
           'value' => fieldDesc.getName(),
           'type' => String.valueOf(displayType.name()),
           'isReference' => displayType == Schema.DisplayType.Reference
@@ -122,4 +119,37 @@ public with sharing class MetadataLoaderController {
       );
     }
   }
+
+  public class ChildRelationshipMetadata {
+    @AuraEnabled public String childSObject;
+    @AuraEnabled public String relationshipName;
+    @AuraEnabled public String field;
 }
+
+  @AuraEnabled(cacheable=true)
+  public static List<ChildRelationshipMetadata> loadChildRelationshipsForObject(
+    String objectApiName
+  ) {
+    List<ChildRelationshipMetadata> childRelationships = new List<ChildRelationshipMetadata>();
+
+    Schema.DescribeSObjectResult describe = Schema.getGlobalDescribe()
+      .get(objectApiName)
+      .getDescribe();
+    for (Schema.ChildRelationship rel : describe.getChildRelationships()) {
+      if (rel.getRelationshipName() != null) {
+        ChildRelationshipMetadata meta = new ChildRelationshipMetadata();
+        meta.childSObject = rel.getChildSObject().getDescribe().getName();
+        meta.relationshipName = rel.getRelationshipName();
+        meta.field = rel.getField().getDescribe().getName();
+        childRelationships.add(meta);
+        
+      }
+    }
+    for(ChildRelationshipMetadata meta : childRelationships){
+      System.debug('Child relationship: ' + meta);
+    }
+    return childRelationships;
+  }
+}
+
+
